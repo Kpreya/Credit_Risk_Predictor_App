@@ -99,7 +99,8 @@ Key factors in credit risk prediction include:
 [MIT](LICENSE)
 
 ## Author
-Developed by Krishnopreya
+Developed by Krishnopreya C.
+Contact :krish6.ch@gmail.com
 
 ## Acknowledgments
 - German Credit Data from UCI Machine Learning Repository

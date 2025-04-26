@@ -9,6 +9,7 @@ imbalanced-learn
 joblib
 tensorflow
 shap
+xgboost 
 lightgbm
 catboost
 optuna

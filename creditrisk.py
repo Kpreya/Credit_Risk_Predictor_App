@@ -1,9 +1,8 @@
 # creditrisk.py
-# -*- coding: utf-8 -*-
 
 # Credit Risk Project - Preprocessing Script
 
-# ==================== Imports ====================
+#  Imports 
 import os
 import pandas as pd
 import numpy as np
@@ -16,11 +15,11 @@ from sklearn.pipeline import Pipeline
 from imblearn.over_sampling import SMOTE
 import joblib
 
-# ==================== Config ====================
+# Config
 warnings.filterwarnings("ignore")
 pd.set_option('display.max_columns', None)
 
-# ==================== Paths ====================
+#  Paths
 BASE_PATH       = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH       = os.path.join(BASE_PATH, 'data', 'german_credit_data.csv')
 PLOT_PATH       = os.path.join(BASE_PATH, 'plots')
@@ -30,15 +29,15 @@ PREPROCESSED_PATH = os.path.join(BASE_PATH, 'data', 'preprocessed_credit_data.cs
 os.makedirs(PLOT_PATH, exist_ok=True)
 os.makedirs(MODEL_PATH, exist_ok=True)
 
-# ==================== Load Data ====================
+# Load Data 
 df = pd.read_csv(DATA_PATH)
 
-# ==================== Clean Columns ====================
+#  Clean Columns
 df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
 if 'unnamed:_0' in df.columns:
     df.drop(columns=['unnamed:_0'], inplace=True)
 
-# ==================== Impute & Clean ====================
+# Impute & Clean 
 cat_cols = ['sex', 'job', 'housing', 'saving_accounts', 'checking_account', 'purpose']
 num_cols = ['age', 'credit_amount', 'duration']
 
@@ -48,7 +47,7 @@ df[cat_cols] = pd.DataFrame(cat_imp.fit_transform(df[cat_cols]), columns=cat_col
 num_imp = SimpleImputer(strategy='median')
 df[num_cols] = pd.DataFrame(num_imp.fit_transform(df[num_cols]), columns=num_cols)
 
-# ==================== Outlier Capping ====================
+#  Outlier Capping
 def cap_outliers(df, cols):
     df_capped = df.copy()
     for col in cols:
@@ -62,7 +61,7 @@ def cap_outliers(df, cols):
 
 df = cap_outliers(df, num_cols)
 
-# ==================== Feature Engineering ====================
+# Feature Engineering 
 df['credit_per_month']      = df['credit_amount'] / (df['duration'] + 1e-3)
 df['age_group']             = pd.cut(df['age'],
                                       bins=[18, 30, 40, 50, 60, 100],
@@ -80,10 +79,10 @@ df['financial_security']   = df['saving_level'] / (df['credit_amount'] / 1000 + 
 cat_cols += ['age_group']
 num_cols += ['credit_per_month', 'credit_to_age_ratio', 'financial_security']
 
-# ==================== Save Preprocessed Data ====================
+#  Save Preprocessed Data 
 df.to_csv(PREPROCESSED_PATH, index=False)
 
-# ==================== Encode Target & Split ====================
+# Encode Target & Split 
 le = LabelEncoder().fit(df['risk'])
 y  = le.transform(df['risk'])
 joblib.dump(le, os.path.join(MODEL_PATH, 'target_encoder.joblib'))
@@ -92,7 +91,7 @@ X = df.drop(columns=['risk'])
 cat_cols_final = [col for col in cat_cols if col in X.columns]
 num_cols_final = [col for col in num_cols if col in X.columns]
 
-# ==================== Preprocessing Pipelines ====================
+# Preprocessing Pipelines 
 num_pipeline = Pipeline([
     ('imputer', SimpleImputer(strategy='median')),
     ('scaler', StandardScaler())
@@ -108,7 +107,7 @@ preprocessor = ColumnTransformer([
     ('cat', cat_pipeline, cat_cols_final)
 ])
 
-# ==================== Train/Test Split ====================
+#  Train/Test Split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y,
     test_size=0.2,
@@ -119,11 +118,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 X_train_processed = preprocessor.fit_transform(X_train)
 X_test_processed  = preprocessor.transform(X_test)
 
-# ==================== Handle Imbalance with SMOTE ====================
+#  Handle Imbalance with SMOTE 
 smote = SMOTE(random_state=42)
 X_train_smote, y_train_smote = smote.fit_resample(X_train_processed, y_train)
 
-# ==================== Persist Artifacts ====================
+# Persist Artifacts
 joblib.dump(preprocessor, os.path.join(MODEL_PATH, 'preprocessor.joblib'))
 
 # Serialize arrays for downstream scripts
